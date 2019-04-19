@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Nerd Launcher</string>
+    <string name="launcher_icon">launcher icon</string>
 </resources>

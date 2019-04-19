@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -13,6 +14,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.Collections;
@@ -43,9 +45,6 @@ public class NerdLauncherFragment extends Fragment {
         return view;
     }
 
-    // SOS: irrelevant but good info: startActivity(intent) secretly adds a CATEGORY_DEFAULT to the
-    // intent,so it will only match activities that also contain that category. Not all app launcher
-    // activities care about being the default for anything, so they don't specify CATEGORY_DEFAULT.
     private void setUpAdapter() {
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -70,12 +69,14 @@ public class NerdLauncherFragment extends Fragment {
 
     private class ActivityHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
-        private final TextView mNameTextView;
+        private final ImageView mImageView;
+        private final TextView mTextView;
         private ResolveInfo mResolveInfo;
 
         ActivityHolder(@NonNull View itemView) {
             super(itemView);
-            mNameTextView = (TextView) itemView;
+            mImageView = itemView.findViewById(R.id.app_icon);
+            mTextView = itemView.findViewById(R.id.app_name);
         }
 
         void bindActivity(ResolveInfo resolveInfo) {
@@ -84,21 +85,17 @@ public class NerdLauncherFragment extends Fragment {
             if (getActivity() == null) return;
             PackageManager packageManager = getActivity().getPackageManager();
             String appName = mResolveInfo.loadLabel(packageManager).toString();
-            mNameTextView.setText(appName);
-            mNameTextView.setOnClickListener(this);
+            mTextView.setText(appName);
+            Drawable appIcon = mResolveInfo.loadIcon(packageManager);
+            mImageView.setImageDrawable(appIcon);
+            mTextView.setOnClickListener(this);
         }
 
         @Override
         public void onClick(View v) {
             ActivityInfo activityInfo = mResolveInfo.activityInfo;
-            // SOS: we include an action because some activities present different UIs depending on
-            // whether they were started as Main or not.
             Intent intent = new Intent(Intent.ACTION_MAIN)
-                    // SOS: note that we need the packageName; when we write 'new Intent(this, Foo.class)'
-                    // the packageName is inferred from the 'this' argument.
                     .setClassName(activityInfo.applicationInfo.packageName, activityInfo.name)
-                    // SOS: By default, the new unrelated activity will be added to THIS app's back-
-                    // stack! If we want the new activity to get its own process/task, we add this.
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         }
@@ -116,7 +113,7 @@ public class NerdLauncherFragment extends Fragment {
         @Override
         public ActivityHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             LayoutInflater layoutInflater = LayoutInflater.from(getActivity());
-            View view = layoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false);
+            View view = layoutInflater.inflate(R.layout.list_item_app, parent, false);
             return new ActivityHolder(view);
         }
 
